@@ -45,8 +45,12 @@ namespace MyBGList.Models
         [Precision(4, 2)]
         public decimal ComplexityAvarage { get; set; }
 
+
         [Required]
         public int OwnedUsers { get; set; }
+
+        [Required]
+        public DateTime CreatedDate { get; set; }
 
         [Required]
         public DateTime LastModifiedDate { get; set; }
