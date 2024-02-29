@@ -3,6 +3,8 @@ using MyBGList.DTO;
 using MyBGList.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
+using System.ComponentModel.DataAnnotations;
+using MyBGList.Attributes;
 
 namespace MyBGList.Controllers
 {
@@ -22,25 +24,24 @@ namespace MyBGList.Controllers
 
         [HttpGet(Name = "GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-       public async  Task<RestDTO<BoardGame[]>> Get(int pageIndex = 0, int pageSize = 10, string? sortColumn = "Name", string? sortOrder = "ASC", string? filterQuery = null)
-        {
+       public async  Task<RestDTO<BoardGame[]>> Get([FromQuery] RequestDTO<BoardGame> input)        {
             
             var query = _context.BoardGames.AsQueryable();
 
-            if(!string.IsNullOrEmpty(filterQuery))
-                query = query.Where(b => b.Name.Contains(filterQuery));
+            if(!string.IsNullOrEmpty(input.FilterQuery))
+                query = query.Where(b => b.Name.Contains(input.FilterQuery));
 
             var recordCount = await query.CountAsync();
 
-            query = query.OrderBy($"{sortColumn} {sortOrder}").Skip(pageIndex * pageSize).Take(pageSize);
+            query = query.OrderBy($"{input.SortColumn} {input.SortOrder}").Skip(input.PageIndex * input.PageSize).Take(input.PageSize);
 
             return new RestDTO<BoardGame[]>()
             {
                 Data = await query.ToArrayAsync(),
-                PageIndex = pageIndex,
-                PageSize = pageSize,
+                PageIndex = input.PageIndex,
+                PageSize = input.PageSize,
                 RecordCount = recordCount,
-                Links = new List<LinkDTO> { new LinkDTO(Url.Action(null, "BoardGames", new { pageIndex, pageSize }, null, Request.Scheme)!, "self", "GET") }
+                Links = new List<LinkDTO> { new LinkDTO(Url.Action(null, "BoardGames", new { input.PageIndex, input.PageSize }, null, Request.Scheme)!, "self", "GET") }
             };
         }
 
