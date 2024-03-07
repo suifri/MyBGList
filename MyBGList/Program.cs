@@ -52,6 +52,13 @@ builder.Services.AddControllers(options => { options.ModelBindingMessageProvider
     options.ModelBindingMessageProvider.SetValueMustBeANumberAccessor(x => $"The field {x} must be a number.");
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((x, y) => $"The value '{x}' is not valid for '{y}'.");
     options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(() => $"A value is required");
+
+    options.CacheProfiles.Add("NoCache", new CacheProfile() { NoStore = true });
+    options.CacheProfiles.Add("Any-60", new CacheProfile()
+    {
+        Location = ResponseCacheLocation.Any,
+        Duration = 60
+    });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -78,6 +85,26 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddResponseCaching(options=>
+{
+    options.MaximumBodySize = 32 * 1024 * 1024;
+    options.SizeLimit = 50 * 1024 * 1024;
+});
+
+builder.Services.AddMemoryCache();
+
+//builder.Services.AddDistributedSqlServerCache(options =>
+//{
+//    options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+//    options.SchemaName = "dbo";
+//    options.TableName = "AppCache";
+//});
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+});
+
 var app = builder.Build();
 
 
@@ -97,7 +124,21 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseResponseCaching();
+
 app.UseAuthorization();
+
+app.Use((context, next) =>
+{
+    context.Response.GetTypedHeaders().CacheControl =
+    new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+    {
+        NoCache = true,
+        NoStore = true
+    };
+
+    return next.Invoke();
+});
 
 app.MapGet("/error",
     [EnableCors("AnyOrigin")]
