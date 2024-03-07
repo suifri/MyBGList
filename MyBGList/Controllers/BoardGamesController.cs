@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 using System.ComponentModel.DataAnnotations;
 using MyBGList.Attributes;
+using MyBGList.Constants;
 
 namespace MyBGList.Controllers
 {
@@ -24,7 +25,10 @@ namespace MyBGList.Controllers
 
         [HttpGet(Name = "GetBoardGames")]
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 60)]
-       public async  Task<RestDTO<BoardGame[]>> Get([FromQuery] RequestDTO<BoardGame> input)        {
+       public async  Task<RestDTO<BoardGame[]>> Get([FromQuery] RequestDTO<BoardGame> input)        
+       {
+            _logger.LogInformation(CustomLogEvents.BoardGamesController_Get,
+                "Get method started [{MachineName}] [{ThreadId}] at [{Time: HH:mm}]", Environment.MachineName, Environment.CurrentManagedThreadId, DateTime.Now);  
             
             var query = _context.BoardGames.AsQueryable();
 
